@@ -11,6 +11,7 @@ Set your API key and you're ready to go!
 ```python
    >>> import optimizely
    >>> optimizely.api_key = 'abcdefghijklmnopqrstuvwxyz:123456'
+   
    >>> projects = optimizely.Project.list()
    >>> projects
    [<Project object with ID: 12345>]
