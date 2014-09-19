@@ -11,7 +11,7 @@ Set your API key and you're ready to go!
 ```python
    >>> import optimizely
    >>> optimizely.api_key = 'abcdefghijklmnopqrstuvwxyz:123456'
-   >>> optimizely.Project.all()
+   >>> optimizely.Project.list()
    [
       {
         "code_revision": 8,
