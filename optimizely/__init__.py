@@ -1,18 +1,31 @@
 import json
 import requests
 
+from errors import *
+
 api_key = ''
 api_base = 'https://www.optimizelyapis.com/experiment/v1/'
 
 
-class APIResource(dict):
+class APIResource(object):
     endpoint = ''
 
-    def __init__(self, *arg, **kw):
-        super(APIResource, self).__init__(*arg, **kw)
+    def __init__(self, params):
+        if type(params) == dict:
+            for (k, v) in params.iteritems():
+                self.__setattr__(k, v)
+        else:
+            raise ValueError('%s can only be initiated with a dict.' % self.__class__.__name__)
+
+    def __repr__(self):
+        if hasattr(self, 'id'):
+            return '<%s object with ID: %s>' % (self.__class__.__name__, self.id)
+        else:
+            return '<%s object without ID>' % self.__class__.__name__
+
 
     @classmethod
-    def from_json(cls, r):
+    def from_api_response(cls, r):
         if r.status_code in [200, 201, 202]:
             if type(r.json()) == list:
                 return [cls(resource) for resource in r.json()]
@@ -21,41 +34,41 @@ class APIResource(dict):
         elif r.status_code == 204:
             return
         elif r.status_code == 400:
-            raise BadRequestError(r.text)
+            raise BadRequestError(r.json().get('message'))
         elif r.status_code == 401:
-            raise UnauthorizedError(r.text)
+            raise UnauthorizedError(r.json().get('message'))
         elif r.status_code == 403:
-            raise ForbiddenError(r.text)
+            raise ForbiddenError(r.json().get('message'))
         elif r.status_code == 404:
-            raise NotFoundError(r.text)
+            raise NotFoundError(r.json().get('message'))
         elif r.status_code == 429:
-            raise TooManyRequestsError(r.text)
+            raise TooManyRequestsError(r.json().get('message'))
         elif r.status_code == 503:
-            raise ServiceUnavailableError(r.text)
+            raise ServiceUnavailableError(r.json().get('message'))
         else:
             raise OptimizelyError(r.text)
 
     @classmethod
     def list(cls):
-        return cls.from_json(requests.get(api_base + cls.endpoint, headers={'Token': api_key}))
+        return cls.from_api_response(requests.get(api_base + cls.endpoint, headers={'Token': api_key}))
 
     @classmethod
-    def read(cls, pid):
-        return cls.from_json(requests.get(api_base + cls.endpoint + str(pid), headers={'Token': api_key}))
+    def get(cls, pid):
+        return cls.from_api_response(requests.get(api_base + cls.endpoint + str(pid), headers={'Token': api_key}))
 
     @classmethod
     def create(cls, data):
-        return cls.from_json(requests.post(api_base + cls.endpoint, data=json.dumps(data),
-                                           headers={'Token': api_key, 'Content-Type': 'application/json'}))
+        return cls.from_api_response(requests.post(api_base + cls.endpoint, data=json.dumps(data),
+                                                   headers={'Token': api_key, 'Content-Type': 'application/json'}))
 
     @classmethod
-    def put(cls, rid, data):
-        return cls.from_json(requests.put(api_base + cls.endpoint + str(rid), data=json.dumps(data),
-                                          headers={'Token': api_key, 'Content-Type': 'application/json'}))
+    def update(cls, rid, data):
+        return cls.from_api_response(requests.put(api_base + cls.endpoint + str(rid), data=json.dumps(data),
+                                                  headers={'Token': api_key, 'Content-Type': 'application/json'}))
 
     @classmethod
     def delete(cls, pid):
-        return cls.from_json(requests.delete(api_base + cls.endpoint + str(pid), headers={'Token': api_key}))
+        return cls.from_api_response(requests.delete(api_base + cls.endpoint + str(pid), headers={'Token': api_key}))
 
 
 class Project(APIResource):
@@ -66,16 +79,16 @@ class Project(APIResource):
         raise NotImplementedError('Projects may not be deleted through the API.')
 
     def experiments(self):
-        if not self.get('id'):
+        if not hasattr(self, 'id'):
             raise InvalidIDError('Project is missing its ID.')
-        return Experiment.from_json(requests.get(api_base + self.endpoint + str(self['id']) + '/experiments',
-                                                 headers={'Token': api_key}))
+        return Experiment.from_api_response(requests.get(api_base + self.endpoint + str(self.id) + '/experiments',
+                                                         headers={'Token': api_key}))
 
     def audiences(self):
-        if not self.get('id'):
+        if not hasattr(self, 'id'):
             raise InvalidIDError('Project is missing its ID.')
-        return Audience.from_json(requests.get(api_base + self.endpoint + str(self['id']) + '/audiences',
-                                               headers={'Token': api_key}))
+        return Audience.from_api_response(requests.get(api_base + self.endpoint + str(self.id) + '/audiences',
+                                                       headers={'Token': api_key}))
 
 
 class Experiment(APIResource):
@@ -88,36 +101,38 @@ class Experiment(APIResource):
 
     @classmethod
     def create(cls, data):
-        return cls.from_json(requests.post(api_base + 'projects/' + str(data['project_id']) + '/' + cls.endpoint,
-                                           data=json.dumps(data),
-                                           headers={'Token': api_key, 'Content-Type': 'application/json'}))
+        return cls.from_api_response(requests.post(api_base + 'projects/' + str(data['project_id']) + '/' +
+                                                   cls.endpoint, data=json.dumps(data),
+                                                   headers={'Token': api_key, 'Content-Type': 'application/json'}))
 
     def results(self):
-        return Result.from_json(requests.get(api_base + self.endpoint + str(self['id']) + '/results',
-                                             headers={'Token': api_key}))
+        return Result.from_api_response(requests.get(api_base + self.endpoint + str(self.id) + '/results',
+                                                     headers={'Token': api_key}))
 
     def variations(self):
-        return Variation.from_json(requests.get(api_base + self.endpoint + str(self['id']) + '/variations',
-                                                headers={'Token': api_key}))
+        return Variation.from_api_response(requests.get(api_base + self.endpoint + str(self.id) + '/variations',
+                                                        headers={'Token': api_key}))
 
     def add_goal(self, gid):
-        goal = Goal.read(gid)
-        return Goal.from_json(Goal.put(goal.get('id'),
-                                       {'experiment_ids': goal.get('experiment_ids').append(self['id'])}))
+        goal = Goal.get(gid)
+        return Goal.from_api_response(Goal.update(goal.id, {'experiment_ids': goal.experiment_ids.append(self.id)}))
 
     def remove_goal(self, gid):
-        goal = Goal.read(gid)
-        experiment_ids = list(set(goal.get('experiment_ids')).remove(self['id']))
-        return Goal.from_json(Goal.put(goal.get('id'), {'experiment_ids': experiment_ids}))
+        goal = Goal.get(gid)
+        experiment_ids = list(set(goal.experiment_ids).remove(self.id))
+        return Goal.from_api_response(Goal.update(goal.id, {'experiment_ids': experiment_ids}))
 
 
 class Result(APIResource):
+    def __repr__(self):
+        return '<%s object>' % self.__class__.__name__
+
     @classmethod
     def list(cls):
         raise NotImplementedError('There is no method to list all results. Try using Experiment.results() instead.')
 
     @classmethod
-    def read(cls, pid):
+    def get(cls, pid):
         raise NotImplementedError('There is no method to get a single result.')
 
     @classmethod
@@ -125,7 +140,7 @@ class Result(APIResource):
         return NotImplementedError('There is no method to create a result.')
 
     @classmethod
-    def put(cls, pid, data):
+    def update(cls, pid, data):
         return NotImplementedError('There is no method to update a result.')
 
     @classmethod
@@ -142,9 +157,9 @@ class Variation(APIResource):
 
     @classmethod
     def create(cls, data):
-        return cls.from_json(requests.post(api_base + 'experiments/' + str(data['experiment_id']) + '/' + cls.endpoint,
-                                           data=json.dumps(data),
-                                           headers={'Token': api_key, 'Content-Type': 'application/json'}))
+        return cls.from_api_response(requests.post(api_base + 'experiments/' + str(data['experiment_id']) + '/' +
+                                                   cls.endpoint, data=json.dumps(data),
+                                                   headers={'Token': api_key, 'Content-Type': 'application/json'}))
 
 
 class Goal(APIResource):
@@ -156,9 +171,9 @@ class Goal(APIResource):
 
     @classmethod
     def create(cls, data):
-        return cls.from_json(requests.post(api_base + 'projects/' + str(data['project_id']) + '/' + cls.endpoint,
-                                           data=json.dumps(data),
-                                           headers={'Token': api_key, 'Content-Type': 'application/json'}))
+        return cls.from_api_response(requests.post(api_base + 'projects/' + str(data['project_id']) + '/' +
+                                                   cls.endpoint, data=json.dumps(data),
+                                                   headers={'Token': api_key, 'Content-Type': 'application/json'}))
 
 
 class Audience(APIResource):
@@ -170,47 +185,6 @@ class Audience(APIResource):
 
     @classmethod
     def create(cls, data):
-        return cls.from_json(requests.post(api_base + 'projects/' + str(data['project_id']) + '/' + cls.endpoint,
-                                           data=json.dumps(data),
-                                           headers={'Token': api_key, 'Content-Type': 'application/json'}))
-
-
-class OptimizelyError(Exception):
-    """ General exception for all Optimizely Experiments API related issues."""
-    pass
-
-
-class BadRequestError(OptimizelyError):
-    """ Exception for when request was not sent in valid JSON."""
-    pass
-
-
-class UnauthorizedError(OptimizelyError):
-    """ Exception for when API token is missing or included in the body rather than the header."""
-    pass
-
-
-class ForbiddenError(OptimizelyError):
-    """ Exception for when API token is provided but it is invalid or revoked."""
-    pass
-
-
-class NotFoundError(OptimizelyError):
-    """ Exception for when the id used in request is inaccurate or token user doesn't have permission to
-    view/edit it."""
-    pass
-
-
-class TooManyRequestsError(OptimizelyError):
-    """ Exception for when a rate limit for the API is hit."""
-    pass
-
-
-class ServiceUnavailableError(OptimizelyError):
-    """ Exception for when the API is overloaded or down for maintenance."""
-    pass
-
-
-class InvalidIDError(OptimizelyError):
-    """ Exception for when object is missing its ID."""
-    pass
+        return cls.from_api_response(requests.post(api_base + 'projects/' + str(data['project_id']) + '/' +
+                                                   cls.endpoint, data=json.dumps(data),
+                                                   headers={'Token': api_key, 'Content-Type': 'application/json'}))
