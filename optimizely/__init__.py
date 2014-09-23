@@ -10,9 +10,11 @@ api_base = 'https://www.optimizelyapis.com/experiment/v1/'
 class APIResource(object):
     endpoint = ''
 
-    def __init__(self, params):
-        if type(params) == dict:
-            for (k, v) in params.iteritems():
+    def __init__(self, param):
+        if type(param) == int:
+            self.__init__(self.get(param).__dict__)
+        elif type(param) == dict:
+            for (k, v) in param.iteritems():
                 self.__setattr__(k, v)
         else:
             raise ValueError('%s can only be initiated with a dict.' % self.__class__.__name__)
@@ -115,12 +117,15 @@ class Experiment(APIResource):
 
     def add_goal(self, gid):
         goal = Goal.get(gid)
-        return Goal.from_api_response(Goal.update(goal.id, {'experiment_ids': goal.experiment_ids.append(self.id)}))
+        experiment_ids = set(goal.experiment_ids)
+        experiment_ids.add(self.id)
+        return Goal.update(goal.id, {'experiment_ids': list(experiment_ids)})
 
     def remove_goal(self, gid):
         goal = Goal.get(gid)
-        experiment_ids = list(set(goal.experiment_ids).remove(self.id))
-        return Goal.from_api_response(Goal.update(goal.id, {'experiment_ids': experiment_ids}))
+        experiment_ids = set(goal.experiment_ids)
+        experiment_ids.remove(self.id)
+        return Goal.update(goal.id, {'experiment_ids': list(experiment_ids)})
 
 
 class Result(APIResource):
@@ -137,15 +142,15 @@ class Result(APIResource):
 
     @classmethod
     def create(cls, data):
-        return NotImplementedError('There is no method to create a result.')
+        raise NotImplementedError('There is no method to create a result.')
 
     @classmethod
     def update(cls, pid, data):
-        return NotImplementedError('There is no method to update a result.')
+        raise NotImplementedError('There is no method to update a result.')
 
     @classmethod
     def delete(cls, pid):
-        return NotImplementedError('There is no method to delete a result.')
+        raise NotImplementedError('There is no method to delete a result.')
 
 
 class Variation(APIResource):
@@ -188,3 +193,7 @@ class Audience(APIResource):
         return cls.from_api_response(requests.post(api_base + 'projects/' + str(data['project_id']) + '/' +
                                                    cls.endpoint, data=json.dumps(data),
                                                    headers={'Token': api_key, 'Content-Type': 'application/json'}))
+
+    @classmethod
+    def delete(cls, pid):
+        raise NotImplementedError('Audiences may not be deleted through the API.')
