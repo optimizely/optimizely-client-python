@@ -9,4 +9,6 @@ setup(name='optimizely',
       install_requires=[
           'requests',
       ],
-      zip_safe=False)
+      zip_safe=False,
+      test_suit='nose.collector',
+      tests_require=['nose'])
