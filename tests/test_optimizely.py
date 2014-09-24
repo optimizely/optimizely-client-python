@@ -5,6 +5,7 @@ import unittest
 import optimizely
 from api_mock import APIResponseMock
 from api_mock import TestResource
+from optimizely.resource import APIResource
 
 
 class TestAPIResource(unittest.TestCase):
@@ -18,29 +19,29 @@ class TestAPIResource(unittest.TestCase):
 
         # test error response codes
         response.status_code = 400
-        self.assertRaises(optimizely.BadRequestError, optimizely.APIResource.from_api_response, response)
+        self.assertRaises(optimizely.BadRequestError, APIResource.from_api_response, response)
         response.status_code = 401
-        self.assertRaises(optimizely.UnauthorizedError, optimizely.APIResource.from_api_response, response)
+        self.assertRaises(optimizely.UnauthorizedError, APIResource.from_api_response, response)
         response.status_code = 403
-        self.assertRaises(optimizely.ForbiddenError, optimizely.APIResource.from_api_response, response)
+        self.assertRaises(optimizely.ForbiddenError, APIResource.from_api_response, response)
         response.status_code = 404
-        self.assertRaises(optimizely.NotFoundError, optimizely.APIResource.from_api_response, response)
+        self.assertRaises(optimizely.NotFoundError, APIResource.from_api_response, response)
         response.status_code = 429
-        self.assertRaises(optimizely.TooManyRequestsError, optimizely.APIResource.from_api_response, response)
+        self.assertRaises(optimizely.TooManyRequestsError, APIResource.from_api_response, response)
         response.status_code = 503
-        self.assertRaises(optimizely.ServiceUnavailableError, optimizely.APIResource.from_api_response, response)
+        self.assertRaises(optimizely.ServiceUnavailableError, APIResource.from_api_response, response)
         response.status_code = 500
-        self.assertRaises(optimizely.OptimizelyError, optimizely.APIResource.from_api_response, response)
+        self.assertRaises(optimizely.OptimizelyError, APIResource.from_api_response, response)
 
         # test correct response codes
         response.status_code = 200
-        self.assertDictEqual(mock_values, optimizely.APIResource.from_api_response(response).__dict__)
+        self.assertDictEqual(mock_values, APIResource.from_api_response(response).__dict__)
         response.status_code = 201
-        self.assertDictEqual(mock_values, optimizely.APIResource.from_api_response(response).__dict__)
+        self.assertDictEqual(mock_values, APIResource.from_api_response(response).__dict__)
         response.status_code = 202
-        self.assertDictEqual(mock_values, optimizely.APIResource.from_api_response(response).__dict__)
+        self.assertDictEqual(mock_values, APIResource.from_api_response(response).__dict__)
         response.status_code = 204
-        self.assertIsNone(optimizely.APIResource.from_api_response(response))
+        self.assertIsNone(APIResource.from_api_response(response))
 
 
 class TestProject(TestResource, unittest.TestCase):
@@ -109,8 +110,9 @@ class TestProject(TestResource, unittest.TestCase):
         experiments = optimizely.Project(self.id).experiments()
 
         # ensure that the correct request was made
-        optimizely.requests.get.assert_called_with(optimizely.api_base + optimizely.Project.endpoint + str(self.id) +
-                                                   '/experiments', headers={'Token': optimizely.api_key})
+        optimizely.api_requester.requests.get.assert_called_with(optimizely.api_base + optimizely.Project.endpoint +
+                                                                 str(self.id) + '/experiments',
+                                                                 headers={'Token': optimizely.api_key})
 
         # ensure that values and types are correct
         self.assertEqual(2, len(experiments))
@@ -126,8 +128,9 @@ class TestProject(TestResource, unittest.TestCase):
         audiences = optimizely.Project(self.id).audiences()
 
         # ensure that the correct request was made
-        optimizely.requests.get.assert_called_with(optimizely.api_base + optimizely.Project.endpoint + str(self.id) +
-                                                   '/audiences', headers={'Token': optimizely.api_key})
+        optimizely.api_requester.requests.get.assert_called_with(optimizely.api_base + optimizely.Project.endpoint +
+                                                                 str(self.id) + '/audiences',
+                                                                 headers={'Token': optimizely.api_key})
 
         # ensure that values and types are correct
         self.assertEqual(2, len(audiences))
@@ -237,12 +240,12 @@ class TestExperiment(TestResource, unittest.TestCase):
         experiment = optimizely.Experiment.create(self.sample_data)
 
         # ensure that the correct request was made
-        optimizely.requests.post.assert_called_with(optimizely.api_base + 'projects/' +
-                                                    str(self.sample_data['project_id']) + '/' +
-                                                    self.test_resource.endpoint,
-                                                    data=json.dumps(self.sample_data),
-                                                    headers={'Token': optimizely.api_key,
-                                                             'Content-Type': 'application/json'})
+        optimizely.api_requester.requests.post.assert_called_with(optimizely.api_base + 'projects/' +
+                                                                  str(self.sample_data['project_id']) + '/' +
+                                                                  self.test_resource.endpoint,
+                                                                  data=json.dumps(self.sample_data),
+                                                                  headers={'Token': optimizely.api_key,
+                                                                           'Content-Type': 'application/json'})
 
         # ensure that values and type are correct
         for k, v in self.sample_data.iteritems():
@@ -262,8 +265,9 @@ class TestExperiment(TestResource, unittest.TestCase):
         results = optimizely.Experiment(self.id).results()
 
         # ensure that the correct request was made
-        optimizely.requests.get.assert_called_with(optimizely.api_base + optimizely.Experiment.endpoint + str(self.id) +
-                                                   '/results', headers={'Token': optimizely.api_key})
+        optimizely.api_requester.requests.get.assert_called_with(optimizely.api_base + optimizely.Experiment.endpoint +
+                                                                 str(self.id) + '/results',
+                                                                 headers={'Token': optimizely.api_key})
 
         # ensure that values and types are correct
         self.assertEqual(2, len(results))
@@ -279,8 +283,9 @@ class TestExperiment(TestResource, unittest.TestCase):
         variations = optimizely.Experiment(self.id).variations()
 
         # ensure that the correct request was made
-        optimizely.requests.get.assert_called_with(optimizely.api_base + optimizely.Experiment.endpoint + str(self.id) +
-                                                   '/variations', headers={'Token': optimizely.api_key})
+        optimizely.api_requester.requests.get.assert_called_with(optimizely.api_base + optimizely.Experiment.endpoint +
+                                                                 str(self.id) + '/variations',
+                                                                 headers={'Token': optimizely.api_key})
 
         # ensure that values and types are correct
         self.assertEqual(2, len(variations))
@@ -382,12 +387,12 @@ class TestVariation(TestResource, unittest.TestCase):
         variation = optimizely.Variation.create(self.sample_data)
 
         # ensure that the correct request was made
-        optimizely.requests.post.assert_called_with(optimizely.api_base + 'experiments/' +
-                                                    str(self.sample_data['experiment_id']) + '/' +
-                                                    self.test_resource.endpoint,
-                                                    data=json.dumps(self.sample_data),
-                                                    headers={'Token': optimizely.api_key,
-                                                             'Content-Type': 'application/json'})
+        optimizely.api_requester.requests.post.assert_called_with(optimizely.api_base + 'experiments/' +
+                                                                  str(self.sample_data['experiment_id']) + '/' +
+                                                                  self.test_resource.endpoint,
+                                                                  data=json.dumps(self.sample_data),
+                                                                  headers={'Token': optimizely.api_key,
+                                                                           'Content-Type': 'application/json'})
 
         # ensure that values and type are correct
         for k, v in self.sample_data.iteritems():
@@ -455,12 +460,12 @@ class TestGoal(TestResource, unittest.TestCase):
         goal = optimizely.Goal.create(self.sample_data)
 
         # ensure that the correct request was made
-        optimizely.requests.post.assert_called_with(optimizely.api_base + 'projects/' +
-                                                    str(self.sample_data['project_id']) + '/' +
-                                                    self.test_resource.endpoint,
-                                                    data=json.dumps(self.sample_data),
-                                                    headers={'Token': optimizely.api_key,
-                                                             'Content-Type': 'application/json'})
+        optimizely.api_requester.requests.post.assert_called_with(optimizely.api_base + 'projects/' +
+                                                                  str(self.sample_data['project_id']) + '/' +
+                                                                  self.test_resource.endpoint,
+                                                                  data=json.dumps(self.sample_data),
+                                                                  headers={'Token': optimizely.api_key,
+                                                                           'Content-Type': 'application/json'})
 
         # ensure that values and type are correct
         for k, v in self.sample_data.iteritems():
@@ -510,12 +515,12 @@ class TestAudience(TestResource, unittest.TestCase):
         audience = optimizely.Audience.create(self.sample_data)
 
         # ensure that the correct request was made
-        optimizely.requests.post.assert_called_with(optimizely.api_base + 'projects/' +
-                                                    str(self.sample_data['project_id']) + '/' +
-                                                    self.test_resource.endpoint,
-                                                    data=json.dumps(self.sample_data),
-                                                    headers={'Token': optimizely.api_key,
-                                                             'Content-Type': 'application/json'})
+        optimizely.api_requester.requests.post.assert_called_with(optimizely.api_base + 'projects/' +
+                                                                  str(self.sample_data['project_id']) + '/' +
+                                                                  self.test_resource.endpoint,
+                                                                  data=json.dumps(self.sample_data),
+                                                                  headers={'Token': optimizely.api_key,
+                                                                           'Content-Type': 'application/json'})
 
         # ensure that values and type are correct
         for k, v in self.sample_data.iteritems():

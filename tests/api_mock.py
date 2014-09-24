@@ -2,6 +2,7 @@ import json
 import mock
 
 import optimizely
+from optimizely import api_requester
 
 
 class APIResponseMock():
@@ -43,6 +44,9 @@ class TestResource(object):
     """
 
     def create_mocks(self):
+        # set api_key so it is not None
+        optimizely.api_key = 'abc123'
+
         # create updated data mocks
         self.sample_data_updated = self.sample_data.copy()
         self.sample_data_updated.update(self.sample_updates)
@@ -68,11 +72,11 @@ class TestResource(object):
         requests_mock.post = mock.Mock(side_effect=self.mock_api.post)
         requests_mock.put = mock.Mock(side_effect=self.mock_api.put)
         requests_mock.delete = mock.Mock(side_effect=self.mock_api.delete)
-        self.p = mock.patch('optimizely.requests', new=requests_mock)
+        self.p = mock.patch('optimizely.api_requester.requests', new=requests_mock)
         self.p.start()
 
     def tearDown(self):
-        # if optimizely.requests has been patched, unpatch at the end of each test
+        # if api_requester has been patched, unpatch at the end of each test
         if hasattr(self, 'p'):
             self.p.stop()
 
@@ -83,8 +87,8 @@ class TestResource(object):
         resources = self.test_resource.list()
 
         # ensure that the correct GET request was made
-        optimizely.requests.get.assert_called_with(optimizely.api_base + self.test_resource.endpoint,
-                                                   headers={'Token': optimizely.api_key})
+        api_requester.requests.get.assert_called_with(optimizely.api_base + self.test_resource.endpoint,
+                                                      headers={'Token': optimizely.api_key})
 
         # ensure that values and types are correct
         self.assertEqual(2, len(resources))
@@ -100,8 +104,8 @@ class TestResource(object):
         resource = self.test_resource.get(self.id)
 
         # ensure that the correct GET request was made
-        optimizely.requests.get.assert_called_with(optimizely.api_base + self.test_resource.endpoint +
-                                                   str(self.id), headers={'Token': optimizely.api_key})
+        api_requester.requests.get.assert_called_with(optimizely.api_base + self.test_resource.endpoint + str(self.id),
+                                                      headers={'Token': optimizely.api_key})
 
         # ensure that values and type are correct
         for k, v in self.sample_data.iteritems():
@@ -115,10 +119,10 @@ class TestResource(object):
         resource = self.test_resource.create(self.sample_data)
 
         # ensure that the correct POST request was made
-        optimizely.requests.post.assert_called_with(optimizely.api_base + self.test_resource.endpoint,
-                                                    data=json.dumps(self.sample_data),
-                                                    headers={'Token': optimizely.api_key,
-                                                             'Content-Type': 'application/json'})
+        api_requester.requests.post.assert_called_with(optimizely.api_base + self.test_resource.endpoint,
+                                                       data=json.dumps(self.sample_data),
+                                                       headers={'Token': optimizely.api_key,
+                                                                'Content-Type': 'application/json'})
 
         # ensure that values and type are correct
         for k, v in self.sample_data.iteritems():
@@ -132,10 +136,10 @@ class TestResource(object):
         resource = self.test_resource.update(self.id, self.sample_updates)
 
         # ensure that the correct PUT request was made
-        optimizely.requests.put.assert_called_with(optimizely.api_base + self.test_resource.endpoint + str(self.id),
-                                                   data=json.dumps(self.sample_updates),
-                                                   headers={'Token': optimizely.api_key,
-                                                            'Content-Type': 'application/json'})
+        api_requester.requests.put.assert_called_with(optimizely.api_base + self.test_resource.endpoint + str(self.id),
+                                                      data=json.dumps(self.sample_updates),
+                                                      headers={'Token': optimizely.api_key,
+                                                               'Content-Type': 'application/json'})
 
         # ensure that values and type are correct
         for k, v in self.sample_data_updated.iteritems():
@@ -149,8 +153,8 @@ class TestResource(object):
         return_value = self.test_resource.delete(self.id)
 
         # ensure that the correct DELETE request was made
-        optimizely.requests.delete.assert_called_with(optimizely.api_base + self.test_resource.endpoint +
-                                                      str(self.id), headers={'Token': optimizely.api_key})
+        api_requester.requests.delete.assert_called_with(optimizely.api_base + self.test_resource.endpoint +
+                                                         str(self.id), headers={'Token': optimizely.api_key})
 
         # ensure that None is returned
         self.assertIsNone(return_value)
