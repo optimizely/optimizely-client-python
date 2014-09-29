@@ -1,193 +1,222 @@
 import json
-
-from api_requester import APIRequester
-from optimizely.error import (
-    OptimizelyError, BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, TooManyRequestsError,
-    ServiceUnavailableError, InvalidIDError)
+import urllib
 
 
-class APIResource(object):
-    endpoint = ''
+class ResourceGenerator(object):
 
-    def __init__(self, param):
-        if type(param) == int:
-            self.__init__(self.get(param).__dict__)
-        elif type(param) == dict:
-            for (k, v) in param.iteritems():
-                self.__setattr__(k, v)
-        else:
-            raise ValueError('%s can only be initiated with a dict.' % self.__class__.__name__)
+    def __init__(self, client=None, resource=None):
+        if client is None:
+            raise ValueError('Must specify client.')
+        if resource is None:
+            raise ValueError('Must specify resource.')
+        self.client = client
+        self.resource = resource
 
-    def __repr__(self):
-        if hasattr(self, 'id'):
-            return '<%s object with ID: %s>' % (self.__class__.__name__, self.id)
-        else:
-            return '<%s object without ID>' % self.__class__.__name__
+    def get(self, optimizely_ids=None):
+        if not optimizely_ids:
+            return self.resource.list(client=self.client)
+        elif type(optimizely_ids) == int:
+            instance = self.resource(self.client, optimizely_id=optimizely_ids)
+            instance.refresh()
+            return instance
+        elif type(optimizely_ids) == list:
+            response_list = []
+            for optimizely_id in optimizely_ids:
+                response_list.append(self.get(optimizely_id))
+            return response_list
 
-    @classmethod
-    def from_api_response(cls, r):
-        if r.status_code in [200, 201, 202]:
-            if type(r.json()) == list:
-                return [cls(resource) for resource in r.json()]
-            else:
-                return cls(r.json())
-        elif r.status_code == 204:
-            return
-        elif r.status_code == 400:
-            raise BadRequestError(r.json().get('message'))
-        elif r.status_code == 401:
-            raise UnauthorizedError(r.json().get('message'))
-        elif r.status_code == 403:
-            raise ForbiddenError(r.json().get('message'))
-        elif r.status_code == 404:
-            raise NotFoundError(r.json().get('message'))
-        elif r.status_code == 429:
-            raise TooManyRequestsError(r.json().get('message'))
-        elif r.status_code == 503:
-            raise ServiceUnavailableError(r.json().get('message'))
-        else:
-            raise OptimizelyError(r.text)
+    def create(self, data):
+        return self.resource.create(data, client=self.client)
 
-    @classmethod
-    def list(cls):
-        return cls.from_api_response(APIRequester.request('get', cls.endpoint))
+    def update(self, rid, data):
+        return self.resource.update(rid, data, self.client)
+
+
+class APIObject(object):
+
+    def __init__(self, client, optimizely_id=None):
+        self.client = client
+        if optimizely_id:
+            self.id = optimizely_id
+            self.refresh()
+
+    def refresh(self):
+        if not hasattr(self, 'id'):
+            raise AttributeError('%s object has no ID, so it cannot be refreshed' % self.class_name())
+        self._refresh_from(self.client.request('get', [self.class_url(), self.id]))
+
+    def _refresh_from(self, params):
+        for k, v in params.iteritems():
+            self.__setattr__(k, v)
 
     @classmethod
-    def get(cls, pid):
-        return cls.from_api_response(APIRequester.request('get', cls.endpoint + str(pid)))
+    def class_name(cls):
+        if cls == APIObject:
+            raise NotImplementedError(
+                'APIObject is an abstract class.  You should perform '
+                'actions on its subclasses (e.g. Project, Experiment)')
+        return cls.__name__.lower()
 
     @classmethod
-    def create(cls, data):
-        return cls.from_api_response(APIRequester.request('post', cls.endpoint, data=json.dumps(data),
-                                                          headers={'Content-Type': 'application/json'}))
+    def class_url(cls):
+        return '%ss' % cls.class_name()
+
+    def get_child_objects(self, resource):
+        resp = []
+        for li in self.client.request('get', [self.class_url(), self.id, resource.class_url()]):
+            e = resource(self.client)
+            e._refresh_from(li)
+            resp.append(e)
+        return resp
+
+
+class ListableObject(APIObject):
 
     @classmethod
-    def update(cls, rid, data):
-        return cls.from_api_response(APIRequester.request('put', cls.endpoint + str(rid), data=json.dumps(data),
-                                                          headers={'Content-Type': 'application/json'}))
+    def list(cls, client):
+        resp = []
+        for li in client.request('get', [cls.class_url()]):
+            e = cls(client)
+            e._refresh_from(li)
+            resp.append(e)
+        return resp
+
+
+class CreatableObject(APIObject):
 
     @classmethod
-    def delete(cls, pid):
-        return cls.from_api_response(APIRequester.request('delete', cls.endpoint + str(pid)))
+    def create(cls, data, client):
+        instance = cls(client)
+        instance._refresh_from(client.request('post', [cls.class_url()], data=json.dumps(data),
+                                              headers={'Content-Type': 'application/json'}))
+        return instance
 
 
-class Project(APIResource):
-    endpoint = 'projects/'
+class CreatableChildObject(APIObject):
+
+    parent_resource = None
 
     @classmethod
-    def delete(cls, pid):
-        raise NotImplementedError('Projects may not be deleted through the API.')
+    def create(cls, data, client):
+        instance = cls(client)
+        instance._refresh_from(client.request('post', [cls.parent_resource.class_url(),
+                                                       data['%s_id' % cls.parent_resource.class_name()],
+                                                       cls.class_url()],
+                                              data=json.dumps(data),
+                                              headers={'Content-Type': 'application/json'}))
+        return instance
+
+
+class UpdatableObject(APIObject):
+
+    editable_fields = []
+
+    def save(self):
+        return self._refresh_from(self.update(self.id, self.__dict__, self.client).__dict__)
+
+    @classmethod
+    def update(cls, rid, data, client):
+        updates = {}
+        for k, v in data.iteritems():
+            if k in cls.editable_fields:
+                updates[k] = v
+        resp = client.request('put', [cls.class_url(), rid], data=json.dumps(updates),
+                              headers={'Content-Type': 'application/json'})
+        instance = cls(client)
+        instance._refresh_from(resp)
+        return instance
+
+
+class DeletableObject(APIObject):
+
+    def delete(self):
+        return self.client.request('delete', [self.class_url(), self.id])
+
+
+class Project(ListableObject, CreatableObject, UpdatableObject):
+
+    editable_fields = ['ip_filter',
+                       'include_jquery',
+                       'project_name',
+                       'project_status']
 
     def experiments(self):
-        if not hasattr(self, 'id'):
-            raise InvalidIDError('Project is missing its ID.')
-        return Experiment.from_api_response(APIRequester.request('get', self.endpoint + str(self.id) + '/experiments'))
+        return self.get_child_objects(Experiment)
 
-    def audiences(self):
-        if not hasattr(self, 'id'):
-            raise InvalidIDError('Project is missing its ID.')
-        return Audience.from_api_response(APIRequester.request('get', self.endpoint + str(self.id) + '/audiences'))
+    def goals(self):
+        return self.get_child_objects(Goal)
 
 
-class Experiment(APIResource):
-    endpoint = 'experiments/'
+class Experiment(CreatableChildObject, UpdatableObject, DeletableObject):
 
-    @classmethod
-    def list(cls):
-        raise NotImplementedError('There is no method to list all experiments. '
-                                  'Try using Project.experiments() instead.')
-
-    @classmethod
-    def create(cls, data):
-        return cls.from_api_response(APIRequester.request('post', 'projects/' + str(data['project_id']) + '/' +
-                                                          cls.endpoint, data=json.dumps(data),
-                                                          headers={'Content-Type': 'application/json'}))
+    parent_resource = Project
+    editable_fields = ['audience_ids',
+                       'activation_mode',
+                       'description',
+                       'edit_url',
+                       'status',
+                       'custom_css',
+                       'custom_js',
+                       'percentage_included',
+                       'url_conditions']
 
     def results(self):
-        return Result.from_api_response(APIRequester.request('get', self.endpoint + str(self.id) + '/results'))
+        return self.get_child_objects(Result)
 
     def variations(self):
-        return Variation.from_api_response(APIRequester.request('get', self.endpoint + str(self.id) + '/variations'))
+        return self.get_child_objects(Variation)
+
+    def audiences(self):
+        return self.get_child_objects(Audience)
 
     def add_goal(self, gid):
-        goal = Goal.get(gid)
+        goal = Goal(self.client, gid)
         experiment_ids = set(goal.experiment_ids)
         experiment_ids.add(self.id)
-        return Goal.update(goal.id, {'experiment_ids': list(experiment_ids)})
+        goal.experiment_ids = list(experiment_ids)
+        return goal.save()
 
     def remove_goal(self, gid):
-        goal = Goal.get(gid)
+        goal = Goal(self.client, gid)
+        goal.refresh()
         experiment_ids = set(goal.experiment_ids)
         experiment_ids.remove(self.id)
-        return Goal.update(goal.id, {'experiment_ids': list(experiment_ids)})
+        goal.experiment_ids = list(experiment_ids)
+        return goal.save()
 
 
-class Result(APIResource):
-    def __repr__(self):
-        return '<%s object>' % self.__class__.__name__
-
-    @classmethod
-    def list(cls):
-        raise NotImplementedError('There is no method to list all results. Try using Experiment.results() instead.')
-
-    @classmethod
-    def get(cls, pid):
-        raise NotImplementedError('There is no method to get a single result.')
-
-    @classmethod
-    def create(cls, data):
-        raise NotImplementedError('There is no method to create a result.')
-
-    @classmethod
-    def update(cls, pid, data):
-        raise NotImplementedError('There is no method to update a result.')
-
-    @classmethod
-    def delete(cls, pid):
-        raise NotImplementedError('There is no method to delete a result.')
+class Result(APIObject):
+    pass
 
 
-class Variation(APIResource):
-    endpoint = 'variations/'
+class Variation(CreatableChildObject, UpdatableObject, DeletableObject):
 
-    @classmethod
-    def list(cls):
-        raise NotImplementedError('There is no method to list all results. Try using Experiment.variations() instead.')
-
-    @classmethod
-    def create(cls, data):
-        return cls.from_api_response(APIRequester.request('post', 'experiments/' + str(data['experiment_id']) + '/' +
-                                                          cls.endpoint, data=json.dumps(data),
-                                                          headers={'Content-Type': 'application/json'}))
+    parent_resource = Experiment
+    editable_fields = ['description',
+                       'is_paused',
+                       'js_component',
+                       'weight']
 
 
-class Goal(APIResource):
-    endpoint = 'goals/'
+class Goal(CreatableChildObject, UpdatableObject, DeletableObject):
 
-    @classmethod
-    def list(cls):
-        raise NotImplementedError('There is no method to list all goals.')
+    parent_resource = Project
+    editable_fields = ['addable',
+                       'experiment_ids',
+                       'goal_type',
+                       'selector',
+                       'target_to_experiments',
+                       'target_urls',
+                       'target_url_match_types',
+                       'title',
+                       'urls',
+                       'url_match_types']
 
-    @classmethod
-    def create(cls, data):
-        return cls.from_api_response(APIRequester.request('post', 'projects/' + str(data['project_id']) + '/' +
-                                                          cls.endpoint, data=json.dumps(data),
-                                                          headers={'Content-Type': 'application/json'}))
 
+class Audience(CreatableChildObject, UpdatableObject):
 
-class Audience(APIResource):
-    endpoint = 'audiences/'
-
-    @classmethod
-    def list(cls):
-        raise NotImplementedError('There is no method to list all results. Try using Experiment.variations() instead.')
-
-    @classmethod
-    def create(cls, data):
-        return cls.from_api_response(APIRequester.request('post', 'projects/' + str(data['project_id']) + '/' +
-                                                          cls.endpoint, data=json.dumps(data),
-                                                          headers={'Content-Type': 'application/json'}))
-
-    @classmethod
-    def delete(cls, pid):
-        raise NotImplementedError('Audiences may not be deleted through the API.')
+    parent_resource = Project
+    editable_fields = ['name',
+                       'description',
+                       'conditions',
+                       'segmentation']
