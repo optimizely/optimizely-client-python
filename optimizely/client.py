@@ -1,44 +1,54 @@
+__all__ = ['Client']
+
 import urlparse
 import requests
 
 from optimizely import error
 from optimizely import resource
 
-base = 'https://www.optimizelyapis.com/experiment/v1/'
+BASE_URL = 'https://www.optimizelyapis.com/experiment/v1/'
 
 
 class Client(object):
     ALLOWED_REQUESTS = ['get', 'post', 'put', 'delete']
 
-    def __init__(self, api_key, api_base=base):
+    def __init__(self, api_key, api_base=BASE_URL):
+        # set API information
         self.api_key = api_key
         self.api_base = api_base
 
-        self.Project = resource.ResourceGenerator(client=self, resource=resource.Project)
-        self.Experiment = resource.ResourceGenerator(client=self, resource=resource.Experiment)
-        self.Variation = resource.ResourceGenerator(client=self, resource=resource.Variation)
-        self.Goal = resource.ResourceGenerator(client=self, resource=resource.Goal)
-        self.Audience = resource.ResourceGenerator(client=self, resource=resource.Audience)
+        # instantiate resource generators for the relevant API resources
+        self.Projects = resource.ResourceGenerator(client=self, resource=resource.Project)
+        self.Experiments = resource.ResourceGenerator(client=self, resource=resource.Experiment)
+        self.Variations = resource.ResourceGenerator(client=self, resource=resource.Variation)
+        self.Goals = resource.ResourceGenerator(client=self, resource=resource.Goal)
+        self.Audiences = resource.ResourceGenerator(client=self, resource=resource.Audience)
+        self.Dimensions = resource.ResourceGenerator(client=self, resource=resource.Dimension)
+        self.Schedules = resource.ResourceGenerator(client=self, resource=resource.Schedule)
 
-    def request(self, method, url_parts, headers=None, data=''):
-
+    def request(self, method, url_parts, headers=None, data=None):
+        """ Method for making requests to the Optimizely API
+        """
         if method in self.ALLOWED_REQUESTS:
             # add request token header
             headers = headers or {}
             headers.update({'Token': self.api_key})
 
             # make request and return parsed response
-            return self.parse_response(getattr(requests, method)(urlparse.urljoin(
-                self.api_base, '/'.join([str(url_part) for url_part in url_parts])), headers=headers, data=data))
+            url = urlparse.urljoin(self.api_base, '/'.join([str(url_part) for url_part in url_parts]))
+            return self.parse_response(getattr(requests, method)(url, headers=headers, data=data))
         else:
-            raise BadRequestError('%s is not a valid request type.' % method)
+            raise error.BadRequestError('%s is not a valid request type.' % method)
 
     @staticmethod
     def parse_response(resp):
+        """ Method to parse response from the Optimizely API and return results as JSON. Errors are thrown for various
+        errors that the API can throw.
+        """
         if resp.status_code in [200, 201, 202]:
             return resp.json()
         elif resp.status_code == 204:
-            return
+            return None
         elif resp.status_code == 400:
             raise error.BadRequestError(resp.json().get('message'))
         elif resp.status_code == 401:

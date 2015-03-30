@@ -1,3 +1,8 @@
+__all__ = [
+    'OptimizelyError', 'BadRequestError', 'UnauthorizedError', 'ForbiddenError', 'NotFoundError',
+    'TooManyRequestsError', 'ServiceUnavailableError', 'InvalidIDError']
+
+
 class OptimizelyError(Exception):
     """ General exception for all Optimizely Experiments API related issues."""
     pass

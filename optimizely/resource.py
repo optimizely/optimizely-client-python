@@ -1,3 +1,5 @@
+__all__ = ['Project', 'Experiment', 'Result', 'Variation', 'Goal', 'Audience']
+
 import json
 import urllib
 
@@ -26,7 +28,7 @@ class ResourceGenerator(object):
             return response_list
 
     def create(self, data):
-        return self.resource.create(data, client=self.client)
+        return self.resource.create(data, self.client)
 
     def update(self, rid, data):
         return self.resource.update(rid, data, self.client)
@@ -112,7 +114,7 @@ class UpdatableObject(APIObject):
     editable_fields = []
 
     def save(self):
-        return self._refresh_from(self.update(self.id, self.__dict__, self.client).__dict__)
+        self._refresh_from(self.update(self.id, self.__dict__, self.client).__dict__)
 
     @classmethod
     def update(cls, rid, data, client):
@@ -130,7 +132,7 @@ class UpdatableObject(APIObject):
 class DeletableObject(APIObject):
 
     def delete(self):
-        return self.client.request('delete', [self.class_url(), self.id])
+        self.client.request('delete', [self.class_url(), self.id])
 
 
 class Project(ListableObject, CreatableObject, UpdatableObject):
@@ -145,6 +147,12 @@ class Project(ListableObject, CreatableObject, UpdatableObject):
 
     def goals(self):
         return self.get_child_objects(Goal)
+
+    def audiences(self):
+        return self.get_child_objects(Audience)
+
+    def dimensions(self):
+        return self.get_child_objects(Dimension)
 
 
 class Experiment(CreatableChildObject, UpdatableObject, DeletableObject):
@@ -166,8 +174,8 @@ class Experiment(CreatableChildObject, UpdatableObject, DeletableObject):
     def variations(self):
         return self.get_child_objects(Variation)
 
-    def audiences(self):
-        return self.get_child_objects(Audience)
+    def schedules(self):
+        return self.get_child_objects(Schedule)
 
     def add_goal(self, gid):
         goal = Goal(self.client, gid)
@@ -220,3 +228,18 @@ class Audience(CreatableChildObject, UpdatableObject):
                        'description',
                        'conditions',
                        'segmentation']
+
+
+class Dimension(CreatableChildObject, UpdatableObject, DeletableObject):
+
+    parent_resource = Project
+    editable_fields = ['name',
+                       'client_api_name',
+                       'description']
+
+
+class Schedule(CreatableChildObject, UpdatableObject, DeletableObject):
+
+    parent_resource = Experiment
+    editable_fields = ['start_time',
+                       'stop_time']

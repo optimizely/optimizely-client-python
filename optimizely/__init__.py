@@ -4,12 +4,10 @@
 # Andy Harris <andy.harris@optimizely.com>
 
 # Client
-from optimizely.client import Client
+from optimizely.client import *
 
 # Resources
-from optimizely.resource import Project, Experiment, Result, Variation, Goal, Audience
+from optimizely.resource import *
 
 # Errors
-from optimizely.error import (
-    OptimizelyError, BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, TooManyRequestsError,
-    ServiceUnavailableError, InvalidIDError)
+from optimizely.error import *
