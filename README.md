@@ -10,18 +10,17 @@ Usage
 Set your API key and you're ready to go!
 ```python
    >>> import optimizely
-   >>> optimizely.api_key = 'abcdefghijklmnopqrstuvwxyz:123456'
+   >>> client = optimizely.Client('abcdefghijklmnopqrstuvwxyz:123456')
    
-   >>> projects = optimizely.Project.list()
+   >>> projects = client.Projects.get()
    >>> projects
-   [<Project object with ID: 12345>]
+   # [<optimizely.resource.Project object at 0x000000000>, <optimizely.resource.Project object at 0x000000010>]
    
    >>> my_project = projects[0]
    >>> my_project.project_name
-   u'My Project'
+   # 'My Project'
    
-   >>> my_project = optimizely.Project.update(12345, {'project_name': 'My Project (Updated)'})
-   >>> my_project.project_name
-   u'My Project (Updated)'
+   >>> my_project.project_name = 'My Project (Updated)'
+   >>> my_project.save()
    
 ```

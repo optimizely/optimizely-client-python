@@ -3,14 +3,11 @@
 # Authors:
 # Andy Harris <andy.harris@optimizely.com>
 
-# configuration variables
-api_key = None
-api_base = 'https://www.optimizelyapis.com/experiment/v1/'
+# Client
+from optimizely.client import *
 
 # Resources
-from optimizely.resource import Project, Experiment, Result, Variation, Goal, Audience
+from optimizely.resource import *
 
 # Errors
-from optimizely.error import (
-    OptimizelyError, BadRequestError, UnauthorizedError, ForbiddenError, NotFoundError, TooManyRequestsError,
-    ServiceUnavailableError, InvalidIDError)
+from optimizely.error import *
