@@ -576,7 +576,7 @@ See [the Optimizely REST API documentation](http://developers.optimizely.com/res
 # }
 ```
 
-###Creat a Goal
+###Create a Goal
 For all goals, the `title` and `goal_type` are required. For each goal type, other fields are required:
 
 * Click goals need a `selector` and a boolean value for `target_to_experiments` to be set. If it's true, the goal will run on the same pages as the experiment it's it attached to. If it's false, you should also provide `target_urls` and `target_url_match_types`.
