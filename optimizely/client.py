@@ -50,16 +50,16 @@ class Client(object):
         elif resp.status_code == 204:
             return None
         elif resp.status_code == 400:
-            raise error.BadRequestError(resp.json().get('message'))
+            raise error.BadRequestError(resp.text)
         elif resp.status_code == 401:
-            raise error.UnauthorizedError(resp.json().get('message'))
+            raise error.UnauthorizedError(resp.text)
         elif resp.status_code == 403:
-            raise error.ForbiddenError(resp.json().get('message'))
+            raise error.ForbiddenError(resp.text)
         elif resp.status_code == 404:
-            raise error.NotFoundError(resp.json().get('message'))
+            raise error.NotFoundError(resp.text)
         elif resp.status_code == 429:
-            raise error.TooManyRequestsError(resp.json().get('message'))
+            raise error.TooManyRequestsError(resp.text)
         elif resp.status_code == 503:
-            raise error.ServiceUnavailableError(resp.json().get('message'))
+            raise error.ServiceUnavailableError(resp.text)
         else:
             raise error.OptimizelyError(resp.text)
