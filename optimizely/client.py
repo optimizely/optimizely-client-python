@@ -32,8 +32,12 @@ class Client(object):
         if method in self.ALLOWED_REQUESTS:
             # add request token header
             headers = headers or {}
-            headers.update({'Token': self.api_key, 'User-Agent': 'optimizely-client-python/0.1.1'})
-
+            
+            # test if Oauth token
+            if ":" in self.api_key:
+                headers.update({'Token': self.api_key, 'User-Agent': 'optimizely-client-python/0.1.1'})
+            else:
+                headers.update({'Authorization': ' Bearer ' + self.api_key, 'User-Agent': 'optimizely-client-python/0.1.1'})
             # make request and return parsed response
             url = urlparse.urljoin(self.api_base, '/'.join([str(url_part) for url_part in url_parts]))
             return self.parse_response(getattr(requests, method)(url, headers=headers, data=data))
