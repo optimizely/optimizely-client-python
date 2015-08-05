@@ -1,3 +1,6 @@
 *.DS_store
 *.py[cod]
 .idea/
+build
+dist
+optimizely.egg-info

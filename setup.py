@@ -7,7 +7,7 @@ setup(name='optimizely',
       author='Optimizely',
       packages=['optimizely'],
       install_requires=[
-          'requests',
+        'requests',
       ],
       zip_safe=False,
       test_suit='nose.collector',
