@@ -16,7 +16,7 @@ class ResourceGenerator(object):
   def get(self, optimizely_ids=None):
     if not optimizely_ids:
       return self.resource.list(client=self.client)
-    elif type(optimizely_ids) == int:
+    elif type(optimizely_ids) == int or type(optimizely_ids) == long:
       instance = self.resource(self.client, optimizely_id=optimizely_ids)
       instance.refresh()
       return instance
