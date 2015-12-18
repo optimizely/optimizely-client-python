@@ -395,7 +395,6 @@ See [the Optimizely REST API documentation](http://developers.optimizely.com/res
 #   'difference_confidence_interval_min': 0.008,
 #   'difference_confidence_interval_max': 0.020,
 #   'visitors_until_significance': 100,
-#   'confidence': 0.631,
 #   'is_revenue': False,
 # }
 ```
