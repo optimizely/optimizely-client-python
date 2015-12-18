@@ -4,10 +4,10 @@
 # Andy Harris <andy.harris@optimizely.com>
 
 # Client
-from optimizely.client import *
+from .client import *
 
 # Resources
-from optimizely.resource import *
+from .resource import *
 
 # Errors
-from optimizely.error import *
+from .error import *
