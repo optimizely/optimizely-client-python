@@ -10,5 +10,5 @@ setup(name='optimizely',
         'requests',
       ],
       zip_safe=False,
-      test_suit='nose.collector',
+      test_suite='nose.collector',
       tests_require=['nose'])
