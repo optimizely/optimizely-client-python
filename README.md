@@ -361,7 +361,7 @@ See [the Optimizely REST API documentation](http://developers.optimizely.com/res
 ```
 
 ###Get Experiment Results (Stats Engine)
-To list stats engine results, call stats on the associated `Experiment` object.
+To list [Stats Engine results](https://help.optimizely.com/hc/en-us/articles/200039895-Stats-Engine-How-Optimizely-calculates-results-to-enable-business-decisions?flash_digest=ffd1e1a116256b019e5e8109aa843548129129ae), call stats on the associated `Experiment` object.
 
 This function may return a `ServiceUnavailableError` when the associated endpoint is overloaded. If you experience any issues please email us at [developers@optimizely.com](mailto:developers@optimizely.com).
 
