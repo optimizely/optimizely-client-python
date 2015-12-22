@@ -360,6 +360,45 @@ See [the Optimizely REST API documentation](http://developers.optimizely.com/res
 # }
 ```
 
+###Get Experiment Results (Stats Engine)
+To list [Stats Engine results](https://help.optimizely.com/hc/en-us/articles/200039895-Stats-Engine-How-Optimizely-calculates-results-to-enable-business-decisions?flash_digest=ffd1e1a116256b019e5e8109aa843548129129ae), call stats on the associated `Experiment` object.
+
+This function may return a `ServiceUnavailableError` when the associated endpoint is overloaded. If you experience any issues please email us at [developers@optimizely.com](mailto:developers@optimizely.com).
+
+*Only experiments started on or after January 21, 2015 have statistics computed by Optimizely Stats Engine.*
+
+See [the Optimizely REST API documentation](http://developers.optimizely.com/rest/reference/index.html#get-stats) for response attribute definitions.
+
+####Example Python
+```python
+>>> experiment = client.Experiments.get(15)
+>>> experiment.stats()
+# [<optimizely.resource.Stat object at 0x000000000>, <optimizely.resource.Stat object at 0x000000010>]
+
+>>> stat = experiment.stats()[0]
+>>> stat.__dict__
+# {
+#   'variation_id': '925781903',
+#   'variation_name': 'My Variation',
+#   'goal_id': 820360058,
+#   'goal_name': 'Engagement',
+#   'baseline_id': '924521605',
+#   'begin_time': '2014-07-25T20:30:00Z',
+#   'end_time': '2014-07-25T20:38:09Z',
+#   'visitors': 853,
+#   'conversions': 204,
+#   'conversion_rate': 0.239,
+#   'status': 'inconclusive',
+#   'improvement': 0.014,
+#   'statistical_significance’: 0.631,
+#   'difference': 0.014,
+#   'difference_confidence_interval_min': 0.008,
+#   'difference_confidence_interval_max': 0.020,
+#   'visitors_until_significance': 100,
+#   'is_revenue': False,
+# }
+```
+
 ##Schedules
 Experiments can be scheduled to start or stop at a particular time. A **Schedule** is a specification of a start time, stop time, or both, associated with a particular experiment. To learn more about scheduling experiments, see the [Experiment Scheduler](https://help.optimizely.com/hc/en-us/articles/200039845-Experiment-Scheduler).
 

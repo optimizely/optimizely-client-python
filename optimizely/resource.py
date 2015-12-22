@@ -1,4 +1,4 @@
-__all__ = ['Project', 'Experiment', 'Result', 'Variation', 'Goal', 'Audience']
+__all__ = ['Project', 'Experiment', 'Result', 'Stat', 'Variation', 'Goal', 'Audience']
 
 import json
 import urllib
@@ -167,6 +167,9 @@ class Experiment(CreatableChildObject, UpdatableObject, DeletableObject):
   def results(self):
     return self.get_child_objects(Result)
 
+  def stats(self):
+    return self.get_child_objects(Stat)
+
   def variations(self):
     return self.get_child_objects(Variation)
 
@@ -190,6 +193,9 @@ class Experiment(CreatableChildObject, UpdatableObject, DeletableObject):
 
 
 class Result(APIObject):
+  pass
+
+class Stat(APIObject):
   pass
 
 
