@@ -1,11 +1,14 @@
 from setuptools import setup
 
-setup(name='optimizely',
+setup(name='optimizely-python',
       version='0.3',
-      description='An interface to Optimizely\'s REST API.',
+      description='A Python interface to Optimizely\'s REST API.',
       url='https://github.com/optimizely/optimizely-client-python',
       author='Optimizely',
-      packages=['optimizely'],
+      author_email = 'developers@optimizely.com',
+      packages=['optimizely-python'],
+      keywords= ['python-sdk', 'optimizely']
+      download_url = 'https://github.com/optimizely/optimizely-client-python/tarball/0.3'
       install_requires=[
         'requests',
       ],
