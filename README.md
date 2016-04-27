@@ -3,7 +3,7 @@
 ##Getting Started
 Optimizely's Python client library is an interface to its [REST API](http://developers.optimizely.com/rest/).
 
-The `optimizely` Python module can be installed via `pip` using the command `pip install git+git://github.com/optimizely/optimizely-client-python.git`.
+The `optimizely` Python module can be installed via `pip` using the command `pip install optimizely`.
 
 ###Authentication
 Every API request needs to be authenticated. To authenticate, use a token generated from [optimizely.com/tokens](https://www.optimizely.com/tokens), then pass it to the Optimizely client object.
