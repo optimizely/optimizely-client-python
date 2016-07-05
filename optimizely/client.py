@@ -8,14 +8,20 @@ from optimizely import resource
 
 BASE_URL = 'https://www.optimizelyapis.com/experiment/v1/'
 
+VALID_TOKEN_TYPES = ('legacy', 'oauth')
 
 class Client(object):
   ALLOWED_REQUESTS = ['get', 'post', 'put', 'delete']
 
-  def __init__(self, api_key, api_base=BASE_URL):
+  def __init__(self, api_key, token_type, api_base=BASE_URL):
     # set API information
     self.api_key = api_key
     self.api_base = api_base
+
+    if token_type in VALID_TOKEN_TYPES:
+      self.token_type = token_type
+    else:
+      raise ValueError('Invalid token type! Valid types are: %s' % (VALID_TOKEN_TYPES,))
 
     # instantiate resource generators for the relevant API resources
     self.Projects = resource.ResourceGenerator(client=self, resource=resource.Project)
@@ -34,10 +40,12 @@ class Client(object):
       headers = headers or {}
 
       # test if Oauth token
-      if ":" in self.api_key:
+      if self.token_type == 'legacy':
         headers.update({'Token': self.api_key, 'User-Agent': 'optimizely-client-python/0.1.1'})
-      else:
+      elif self.token_type == 'oauth':
         headers.update({'Authorization': ' Bearer ' + self.api_key, 'User-Agent': 'optimizely-client-python/0.1.1'})
+      else:
+        raise ValueError('%s is not a valid token type.' % token_type)
       # make request and return parsed response
       url = urlparse.urljoin(self.api_base, '/'.join([str(url_part) for url_part in url_parts]))
       return self.parse_response(getattr(requests, method)(url, headers=headers, data=data))
