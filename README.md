@@ -6,13 +6,15 @@ Optimizely's Python client library is an interface to its [REST API](http://deve
 The `optimizely` Python module can be installed via `pip` using the command `pip install optimizely`.
 
 ###Authentication
-Every API request needs to be authenticated. To authenticate, use a token generated from [optimizely.com/tokens](https://www.optimizely.com/tokens), then pass it to the Optimizely client object.
+The constructor takes in a API key and token type. We support two token types: `oauth` and `legacy`. OAuth refers to a token that was generated via OAuth and legacy is a standard API token, which can be generated from [optimizely.com/tokens](https://www.optimizely.com/tokens). 
+
+`optimizely.Client(api_key, token_type)`
 
 In the following examples, `client` refers to a `Client` object created using the code below.
 
 ```python
 >>> import optimizely
->>> client = optimizely.Client('abcdefghijklmnopqrstuvwxyz:123456')
+>>> client = optimizely.Client('abcdefghijklmnopqrstuvwxyz:123456', 'oauth')
 ```
 
 ###Exceptions

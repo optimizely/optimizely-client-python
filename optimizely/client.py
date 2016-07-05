@@ -21,7 +21,7 @@ class Client(object):
     if token_type in VALID_TOKEN_TYPES:
       self.token_type = token_type
     else:
-      raise ValueError('Invalid Token Type')
+      raise ValueError('Invalid token type! Valid types are: %s' % (VALID_TOKEN_TYPES,))
 
     # instantiate resource generators for the relevant API resources
     self.Projects = resource.ResourceGenerator(client=self, resource=resource.Project)
