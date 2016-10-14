@@ -46,7 +46,11 @@ class APIObject(object):
     self._refresh_from(self.client.request('get', [self.class_url(), self.id]))
 
   def _refresh_from(self, params):
-    for k, v in params.iteritems():
+    try:
+      items = params.iteritems()
+    except AttributeError:
+      items = params.items()  
+    for k, v in items:
       self.__setattr__(k, v)
 
   @classmethod
@@ -113,7 +117,11 @@ class UpdatableObject(APIObject):
   @classmethod
   def update(cls, rid, data, client):
     updates = {}
-    for k, v in data.iteritems():
+    try:
+      items = data.iteritems()
+    except AttributeError:
+      items = data.items()  
+    for k, v in items:
       if k in cls.editable_fields:
         updates[k] = v
     resp = client.request('put', [cls.class_url(), rid], data=json.dumps(updates),

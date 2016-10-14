@@ -1,6 +1,10 @@
 __all__ = ['Client']
 
-import urlparse
+try:
+    import urlparse
+except: #PY3
+    from urllib import parse as urlparse
+    
 import requests
 
 from optimizely import error
