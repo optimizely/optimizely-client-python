@@ -51,6 +51,7 @@ See [the Optimizely REST API documentation](http://developers.optimizely.com/res
 # {
 #   'id': 1234,
 #   'account_id': 123456789,
+#   'client': <optimizely.client.Client object at 0x7c11e6fa7090>,
 #   'code_revision': 12,
 #   'project_name': 'My even newer project name',
 #   'project_status': 'Active',
