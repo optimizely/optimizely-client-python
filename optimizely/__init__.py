@@ -3,11 +3,9 @@
 # Authors:
 # Andy Harris <andy.harris@optimizely.com>
 
-# Client
-from .client import *
+from .client import Client  # noqa
 
-# Resources
-from .resource import *
+from .resource import (Project, Experiment, Result, Stat, Variation,  # noqa
+                       Goal, Audience)  # noqa
 
-# Errors
-from .error import *
+from .error import *  # noqa
