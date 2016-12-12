@@ -56,7 +56,7 @@ class Client(object):
                      'User-Agent': 'optimizely-client-python/0.1.1'})
             elif self.token_type == 'oauth':
                 headers.update(
-                    {'Authorization': ' Bearer ' + self.api_key,
+                    {'Authorization': 'Bearer ' + self.api_key,
                      'User-Agent': 'optimizely-client-python/0.1.1'})
             else:
                 raise ValueError(
