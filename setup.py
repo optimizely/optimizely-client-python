@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='optimizely',
-      version='0.4',
+      version='0.5',
       description='A Python interface to Optimizely\'s REST API.',
       url='https://github.com/optimizely/optimizely-client-python',
       author='Optimizely',
@@ -9,7 +9,7 @@ setup(name='optimizely',
       packages=['optimizely'],
       keywords=['python-sdk', 'optimizely'],
       download_url=(
-          'https://github.com/optimizely/optimizely-client-python/tarball/0.3'
+          'https://github.com/optimizely/optimizely-client-python/tarball/0.5'
       ),
       install_requires=[
           'requests',
