@@ -181,7 +181,8 @@ class Experiment(CreatableChildObject, UpdatableObject, DeletableObject):
                        'custom_css',
                        'custom_js',
                        'percentage_included',
-                       'url_conditions']
+                       'url_conditions',
+                       'experiment_type']
 
     def results(self):
         return self.get_child_objects(Result)

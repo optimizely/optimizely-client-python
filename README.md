@@ -269,8 +269,8 @@ Experiments can be updated by updating the attributes of a fetched object and ca
 * `custom_js`
 * `percentage_included`
 * `url_conditions`
+* `experiment_type`
 
-We don't currently support creating or updating multivariate or multipage tests via the API.
 
 ####Example Python
 ```python
