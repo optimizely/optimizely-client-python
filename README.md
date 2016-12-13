@@ -1,3 +1,7 @@
+<div class="alert warning"> 
+  <strong>Warning! The Optimizely Python client only works for Optimizely Classic (v1 REST API). The actively updated and maintained API is the v2 REST API for Optimizely X. For updated features we recommend you to migrate to Optimizely X.</strong>
+</div>
+
 #Optimizely Python Client
 
 ##Getting Started
